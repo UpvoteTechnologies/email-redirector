@@ -3,19 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redirecting...</title>
+  <title>Redirecting…</title>
   <meta name="robots" content="noindex" />
+
+  <!-- Meta-refresh gets injected by JS the moment we know the token -->
   <script>
-    const url = new URL(window.location.href);
-    const token = url.searchParams.get("token");
-    if (token) {
-      window.location.replace(`https://api.upvote.dev/auth/v1/verify?token=${token}&type=signup&redirect_to=https://upvote.dev/onboarding`);
-    } else {
-      document.body.innerHTML = "Missing token. Please check your link.";
-    }
+    (function () {
+      const url = new URL(window.location.href);
+      const token = url.searchParams.get('token');
+
+      // Helper: show manual-open UI
+      function showFallback(target) {
+        document.getElementById('fallback').style.display = 'block';
+        document.getElementById('manual-link').href = target;
+      }
+
+      if (!token) {
+        document.body.innerHTML =
+          '<p style="font-family:system-ui,sans-serif">Missing token. Please check your link.</p>';
+        return;
+      }
+
+      // 1) Final Supabase verification URL
+      const target =
+        `https://api.upvote.dev/auth/v1/verify?token=${encodeURIComponent(
+          token
+        )}&type=signup&redirect_to=https://upvote.dev/onboarding`;
+
+      // 2) Inject meta-refresh (works in a surprising number of webviews)
+      const meta = document.createElement('meta');
+      meta.httpEquiv = 'refresh';
+      meta.content = `0; url=${target}`;
+      document.head.appendChild(meta);
+
+      // 3) Standard JS redirect
+      try {
+        window.location.href = target;
+      } catch (_) {/* ignored */}
+      
+      // 4) Android-only: try an intent:// deep link after a tick
+      setTimeout(() => {
+        if (/Android/i.test(navigator.userAgent)) {
+          const intent = `intent://${target.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+          window.location.href = intent;
+        }
+      }, 300);
+
+      // 5) After 1 s, if we're still on this page, show manual link
+      setTimeout(() => showFallback(target), 1000);
+    })();
   </script>
+
+  <style>
+    body { font-family: system-ui, sans-serif; text-align: center; padding: 2rem; }
+    #fallback { display: none; margin-top: 1.5rem; }
+    .btn {
+      display: inline-block; padding: 12px 20px; border-radius: 8px;
+      background:#4A266A;color:#fff;text-decoration:none;font-weight:500;
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecting you securely...</p>
+  <h2>Redirecting you securely…</h2>
+  <p>If nothing happens, tap the button below:</p>
+
+  <div id="fallback">
+    <a id="manual-link" class="btn" rel="noopener">Open in Browser</a>
+  </div>
 </body>
 </html>
