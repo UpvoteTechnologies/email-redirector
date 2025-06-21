@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redirecting...</title>
+  <meta name="robots" content="noindex" />
+  <script>
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("token");
+    if (token) {
+      window.location.replace(`https://api.upvote.dev/auth/v1/verify?token=${token}&type=signup&redirect_to=https://upvote.dev/onboarding`);
+    } else {
+      document.body.innerHTML = "Missing token. Please check your link.";
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecting you securely...</p>
+</body>
+</html>
